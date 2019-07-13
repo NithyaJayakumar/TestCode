@@ -1,113 +1,90 @@
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
-public class SequenceExecutorService {
+/*
+ * Code to generate sequence number that ends with 1 and identify starting number under one million which 
+ * produces the longest chain
+ * */
+class SequenceExecutorService extends Thread{
+
 	
-	static ConcurrentHashMap<Integer,Integer> noofTermsMap = new ConcurrentHashMap<Integer,Integer>();
+	private int startValue = 1;
+	private int endValue = 100;
+	private  int count = 0;
+	private  int sequencecount = 0;
+	static ConcurrentHashMap<Integer, Integer> noofTermsMap =  new ConcurrentHashMap<Integer, Integer>(); 
 	
-	private class IterativeSequenceTask implements Callable<Integer> {
-		private int startNumber;
-		private int endNumber;
+
+	public SequenceExecutorService(int startValue, int endValue) {
+
 		
+		this.startValue = startValue;
+		this.endValue = endValue;
 
-		IterativeSequenceTask(int start, int end) {
-			this.startNumber = start;
-			this.endNumber = end;
+	}
 
+	public void run() {
+		
+		
+		for (int i = startValue; i <= endValue; i++) {
+			this.sequencecount = 0;
+			//System.out.print(i+"->");
+			System.out.println(i);
+			int chainSize = getChainSize(i);
+			noofTermsMap.put(i, chainSize);
 
-		}
-
-		public Integer call() throws InterruptedException{
-			
-			int currentOccurence=0;
-					
-			
-			for(int i=startNumber;i<=endNumber;i++){
-				currentOccurence=i;
-				int ChainSize=1;
-				System.out.print(currentOccurence+"=>");
-					while(currentOccurence != 1){
-						currentOccurence = getNextOccurence(currentOccurence);
-						ChainSize++;
-						if(currentOccurence == 1){
-							System.out.println(currentOccurence);
-							break;
-						}else{
-							System.out.print(currentOccurence+"=>");
-						}
-					}
-					
-					noofTermsMap.put(i,ChainSize);
-				}
-			
-			
-			Integer highestChain = Collections.max(noofTermsMap.values());
-			
-			noofTermsMap.forEach((k,v)->{ if(v == highestChain) System.out.print("key:" + k);});
-			return highestChain;
-			
 		}
 		
-		public int getNextOccurence(int number){
-			if(number%2 == 0){
-				return number/2;
-			}else{
-				return number*3+1;
-			}
-		}
+		System.out.println("Largest chain under 1 million is produced by : "+Collections.max(noofTermsMap.entrySet(), Comparator.comparingInt(Map.Entry::getValue)).getKey());
 		
 		
 	}
 
-	
-	public void executeTask()
-			throws InterruptedException, ExecutionException {
-		
-		int finalTotalCount=0;
-		ExecutorService serviceExecutor=Executors.newFixedThreadPool(5);
-		try{
-			
-			List<Callable<Integer>> task = new ArrayList<Callable<Integer>>();
-			task.add(new IterativeSequenceTask(1,100));
-			task.add(new IterativeSequenceTask(101,1000));
-			task.add(new IterativeSequenceTask(1001,100000));
-			task.add(new IterativeSequenceTask(100001,500000));
-			task.add(new IterativeSequenceTask(800001,1000000));
-			serviceExecutor.invokeAll(task);
-			
-			/*List<Future<Integer>> totalCount = Collections
-					.synchronizedList(new ArrayList<Future<Integer>>());
-			totalCount = serviceExecutor.invokeAll(task);
-			
-			for (Future<Integer> iterationfuture : totalCount) {
+	private int getChainSize(int n) {
+		int sum = 0;
+		//System.out.println("N1 : "+n);
+
+		try {
+
+			if(n % 2 == 0) {
+
+				sum = n/2;
+
+			}  else {
+
+				sum = 3*n +1 ;
+
+			}
+
+			if (sum == 1) {
+				System.out.println(sum);
+				this.sequencecount++;
+				this.count++;
 				
-				if (!iterationfuture.isCancelled() && iterationfuture.isDone()) {
-					
-					System.out.println("total count @each task:" + iterationfuture.get());
-					
-					finalTotalCount = finalTotalCount +  iterationfuture.get();
-					System.out.println("finaltotalcount:" + finalTotalCount);
-				}
-	
+				return this.sequencecount ;
+
 			}
-			
-	*/				//System.out.println("Final total count of number chain that ends at 89 under 1 Million is " + finalTotalCount);
-		}catch(Exception e){
-			throw e;
-		}finally{
-			serviceExecutor.shutdown();
+			else {
+				System.out.print(sum+"->");
+				this.sequencecount++;
+				getChainSize(sum);
+			} 
+
+
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
-	
+		return this.sequencecount;
+
+
 	}
+
+	
+
 
 
 }
